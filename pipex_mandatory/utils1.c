@@ -15,6 +15,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "pipex.h"
+
 static	void	ft_free_tab(char **tab)
 {
 	int	i;
@@ -53,7 +55,7 @@ static	char	*ft_get_path(char *cmd, char **env)
 	char	*path_part;
 	char	**s_cmd;
 
-	if (strchr(cmd, '/') != NULL)
+	if (ft_strchr(cmd, '/') != NULL)
 	{
 		if (access(cmd, F_OK | X_OK) == 0)
 			return cmd;
@@ -66,13 +68,6 @@ static	char	*ft_get_path(char *cmd, char **env)
 	{
 		path_part = ft_strjoin(allpath[i], "/");
 		exec = ft_strjoin(path_part, s_cmd[0]);
-		if (!exec)
-		{
-			ft_free_tab(allpath);
-			ft_free_tab(s_cmd);
-			free(path_part);
-			return NULL;
-		}
 		free(path_part);
 		if (access(exec, F_OK | X_OK) == 0)
 			return (ft_free_tab(s_cmd), exec);
@@ -90,14 +85,16 @@ void	execute_command(char *command, char **env)
 	if (!argv)
 		ft_error("ft_split");
 	command_path = ft_get_path(command, env);
-	if (command_path == NULL)
+	if (!command_path)
 	{
 		free(command_path);
 		ft_free_tab(argv);
-		ft_error("Command not found");
+		perror("Command not found");
+		exit(1);
 	}
 	if (execve(command_path, argv, env) == -1)
 	{
+		free(command_path);
 		ft_free_tab(argv);
 		ft_error("execve");
 	}

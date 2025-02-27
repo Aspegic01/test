@@ -18,64 +18,61 @@ void	ft_error(char *msg)
 	exit(1);
 }
 
-static	void	ft_close(int p1, int p2)
+int	ft_return(char *msg, int r)
 {
-	close(p1);
-	close(p2);
+	perror(msg);
+	return r;
 }
 
-static	void	handle_parent_process(int *i, int num_command, \
-								int prev_pipefd[], int pipefd[])
+void execute_child_process(char *command, char **envp, int *pipe_fd, int child_num)
 {
-	if (*i > 0)
-		ft_close(prev_pipefd[0], prev_pipefd[1]);
-	if (*i < num_command - 1)
-	{
-		prev_pipefd[0] = pipefd[0];
-		prev_pipefd[1] = pipefd[1];
-	}
-	(*i)++;
+    if (child_num == 1)
+    {
+        close(pipe_fd[0]);
+        if (dup2(pipe_fd[1], STDOUT_FILENO) == -1)
+			ft_error("dup2");
+        close(pipe_fd[1]);
+    }
+    else if (child_num == 2)
+    {
+        close(pipe_fd[1]);
+        if (dup2(pipe_fd[0], STDIN_FILENO) == -1)
+			ft_error("dup2");
+        close(pipe_fd[0]);
+    }
+    execute_command(command, envp);
 }
 
-static	void	handle_child_process(int i, int num_command, \
-								int prev_pipefd[], int pipefd[])
+int create_pipe_and_forks(char **av, char **envp)
 {
-	if (i > 0)
-	{
-		dup2(prev_pipefd[0], STDIN_FILENO);
-		ft_close(prev_pipefd[0], prev_pipefd[1]);
-	}
-	if (i < num_command - 1)
-	{
-		dup2(pipefd[1], STDOUT_FILENO);
-		ft_close(pipefd[0], pipefd[1]);
-	}
+    int pipe_fd[2];
+    pid_t child1, child2;
+
+    if (pipe(pipe_fd) == -1)
+		ft_return("pipe", -1);
+    child1 = fork();
+    if (child1 == -1)
+		ft_return("fork", -1);
+    if (child1 == 0)
+    {
+		if (ft_open_input_fd(av))
+			exit(1);
+        execute_child_process(av[2], envp, pipe_fd, 1);
+    }
+    child2 = fork();
+    if (child2 == -1)
+		ft_return("fork", -1);
+    if (child2 == 0)
+        execute_child_process(av[3], envp, pipe_fd, 2);
+    close(pipe_fd[0]);
+    close(pipe_fd[1]);
+    waitpid(child1, NULL, 0);
+    waitpid(child2, NULL, 0);
+    return 0;
 }
 
-void	handle_pip_processes(char **av, int num_command, char **envp)
+void handle_pip_processes(char **av, char **envp)
 {
-	int		pipefd[2];
-	int		prev_pipefd[2];
-	pid_t	pid;
-	int		i;
-
-	i = 0;
-	while (i < num_command)
-	{
-		if (i < num_command - 1 && pipe(pipefd) == -1)
-			ft_error("pipe");
-		pid = fork();
-		if (pid == -1)
-			ft_error("fork");
-		if (pid == 0)
-		{
-			handle_child_process(i, num_command, prev_pipefd, pipefd);
-			execute_command(av[2 + i], envp);
-		}
-		else
-			handle_parent_process(&i, num_command, prev_pipefd, pipefd);
-	}
-	if (num_command > 1)
-		ft_close(prev_pipefd[0], prev_pipefd[1]);
-	while(wait(NULL) > 0);
+    if (create_pipe_and_forks(av, envp) == -1)
+		ft_error("Error creating pip and forcking");
 }

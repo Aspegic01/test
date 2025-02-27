@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "pipex.h"
+#include <stdio.h>
 
 int	ft_open_input_fd(char **av)
 {
@@ -52,17 +53,27 @@ int	ft_open_output_fd(int ac, char **av)
 	return (0);
 }
 
-int	main(int ac, char **av, char **envp)
+int main(int ac, char **av, char **envp)
 {
-	if (ac != 5)
-	{
-		perror("Usage: av <input_file> <cmd1> <cmd2> \
-			... <output_file>\n");
-		exit(1);
-	}
-	if (ft_open_input_fd(av))
-		perror("open input_file");
-	if (ft_open_output_fd(ac, av))
-		ft_error("open output_file");
-	handle_pip_processes(av, ac - 3, envp);
+    if (ac < 5)  // Must have at least 4 arguments (input file, 2 commands, output file)
+    {
+        fprintf(stderr, "Usage: %s <input_file> <cmd1> <cmd2> ... <cmdN> <output_file>\n", av[0]);
+        exit(1);
+    }
+
+    // Open the output file
+    if (ft_open_output_fd(ac, av))
+    {
+        exit(1);
+    }
+
+    // Now, we need to handle the pipes and commands
+    int i = 2;  // Start from the first command (av[2]) and end at the second to last one
+    while (i < ac - 1)  // The last argument should be the output file
+    {
+        handle_pip_processes(&av[i], envp);  // Pass the current command and next to the handler
+        i++;
+    }
+
+    return 0;
 }

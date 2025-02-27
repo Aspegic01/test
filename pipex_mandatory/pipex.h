@@ -24,7 +24,7 @@
 # include "../libft/libft.h"
 
 void	execute_command(char *command, char **env);
-void	handle_pip_processes(char **av, int num_command, char **envp);
+void	handle_pip_processes(char **av, char **envp);
 int		ft_open_input_fd(char **av);
 void	ft_error(char *msg);
 

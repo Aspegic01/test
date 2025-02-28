@@ -55,25 +55,14 @@ int	ft_open_output_fd(int ac, char **av)
 
 int main(int ac, char **av, char **envp)
 {
-    if (ac < 5)  // Must have at least 4 arguments (input file, 2 commands, output file)
+    if (ac < 5)
     {
         fprintf(stderr, "Usage: %s <input_file> <cmd1> <cmd2> ... <cmdN> <output_file>\n", av[0]);
         exit(1);
     }
 
-    // Open the output file
     if (ft_open_output_fd(ac, av))
-    {
         exit(1);
-    }
-
-    // Now, we need to handle the pipes and commands
-    int i = 2;  // Start from the first command (av[2]) and end at the second to last one
-    while (i < ac - 1)  // The last argument should be the output file
-    {
-        handle_pip_processes(&av[i], envp);  // Pass the current command and next to the handler
-        i++;
-    }
-
+    handle_pip_processes(av, envp);
     return 0;
 }

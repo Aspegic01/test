@@ -11,11 +11,6 @@
 /* ************************************************************************** */
 
 #include "pipex.h"
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "pipex.h"
 
 static	void	ft_free_tab(char **tab)
 {
